@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>คลังรหัสผ่าน | KeyVault</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between hidden md:flex">
+    <div class="p-6">
+      <div class="flex items-center space-x-3 mb-8">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+          <i class="fa-solid fa-vault"></i>
+        </div>
+        <div>
+          <h2 class="font-bold text-white leading-none">KeyVault</h2>
+          <span class="text-[10px] text-slate-400 uppercase tracking-widest">Password Manager</span>
+        </div>
+      </div>
+
+      <nav class="space-y-1">
+        <a href="#" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl bg-indigo-600/10 text-indigo-400 font-medium text-sm border border-indigo-500/20">
+          <i class="fa-solid fa-lock w-5"></i>
+          <span>รายการทั้งหมด</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="p-4 border-t border-slate-800">
+      <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-slate-800 hover:bg-red-500/10 hover:text-red-400 text-slate-400 rounded-xl text-sm font-medium transition">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>ออกจากระบบ</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <!-- Topbar -->
+    <header class="h-16 bg-slate-900/50 backdrop-blur border-b border-slate-800 px-6 flex items-center justify-between gap-4">
+      <div class="relative flex-1 max-w-md">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+          <i class="fa-solid fa-magnifying-glass text-sm"></i>
+        </span>
+        <input type="text" id="search-input" onkeyup="filterAccounts(this.value)" placeholder="ค้นหาบริการ หรือชื่อผู้ใช้..." class="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+      </div>
+
+      <button onclick="openModal()" class="flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm rounded-xl shadow-lg shadow-indigo-600/20 transition">
+        <i class="fa-solid fa-plus"></i>
+        <span class="hidden sm:inline">เพิ่มบัญชีใหม่</span>
+      </button>
+    </header>
+
+    <!-- Content Area -->
+    <div class="flex-1 p-6 overflow-y-auto">
+      <div class="mb-6">
+        <h1 class="text-xl font-bold text-white">รายการรหัสผ่านที่บันทึกไว้</h1>
+        <p class="text-xs text-slate-400 mt-1">รหัสผ่านถูกเข้ารหัสปลอดภัยด้วยเทคโนโลยี Half-Key Split</p>
+      </div>
+
+      <div id="accounts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Account Cards -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal สำหรับเพิ่มบัญชีใหม่ -->
+  <div id="add-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-white">เพิ่มรายการใหม่</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form onsubmit="handleAddAccount(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อบริการ/เว็บไซต์</label>
+          <input type="text" id="add-service" required placeholder="เช่น Facebook, KU Service" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">URL เว็บไซต์ (ถ้ามี)</label>
+          <input type="url" id="add-url" placeholder="https://example.com" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อผู้ใช้ / อีเมล</label>
+          <input type="text" id="add-username" required placeholder="Username/Email" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">รหัสผ่าน</label>
+          <input type="password" id="add-password" required placeholder="รหัสผ่านที่จะจัดเก็บ" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">หมายเหตุ</label>
+          <textarea id="add-notes" rows="2" placeholder="รายละเอียดเพิ่มเติม..." class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-medium">ยกเลิก</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium">บันทึกข้อมูล</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal สำหรับแก้ไขบัญชี -->
+  <div id="edit-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-white">แก้ไขข้อมูลบัญชี</h3>
+        <button onclick="closeEditModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form onsubmit="handleEditAccount(event)" class="space-y-4">
+        <input type="hidden" id="edit-id">
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อบริการ/เว็บไซต์</label>
+          <input type="text" id="edit-service" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">URL เว็บไซต์</label>
+          <input type="url" id="edit-url" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">ชื่อผู้ใช้ / อีเมล</label>
+          <input type="text" id="edit-username" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">เปลี่ยนรหัสผ่านใหม่ (เว้นว่างไว้หากใช้รหัสผ่านเดิม)</label>
+          <input type="password" id="edit-password" placeholder="พิมพ์เฉพาะเมื่อต้องการเปลี่ยนรหัสผ่าน" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">หมายเหตุ</label>
+          <textarea id="edit-notes" rows="2" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-medium">ยกเลิก</button>
+          <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-sm font-medium">บันทึกการแก้ไข</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    const clientUserKey = sessionStorage.getItem('clientUserKey');
+    if (!clientUserKey) {
+      window.location.href = '/login.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAccounts);
+
+    async function loadAccounts() {
+      try {
+        const res = await fetch('/api/accounts');
+        const data = await res.json();
+        
+        if (data.success) {
+          renderAccounts(data.data);
+        } else {
+          alert('ไม่สามารถโหลดข้อมูลได้');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderAccounts(accounts) {
+      const grid = document.getElementById('accounts-grid');
+      grid.innerHTML = '';
+
+      if (accounts.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500 text-sm">ยังไม่มีรายการรหัสผ่านที่บันทึกไว้</div>`;
+        return;
+      }
+
+      accounts.forEach(acc => {
+        const card = document.createElement('div');
+        card.className = "account-card bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between hover:border-slate-700 transition";
+        card.setAttribute('data-service', (acc.service_name + ' ' + acc.account_username).toLowerCase());
+
+        const safeServiceName = escapeHtml(acc.service_name);
+        const safeUrl = escapeHtml(acc.service_url || '');
+        const safeUsername = escapeHtml(acc.account_username);
+        const safeNotes = escapeHtml(acc.notes || '');
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300 font-bold border border-slate-700">
+                  ${safeServiceName.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 class="font-bold text-white text-base">${safeServiceName}</h3>
+                  <span class="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">ทั่วไป</span>
+                </div>
+              </div>
+              <div class="flex space-x-1">
+                <button onclick="openEditModal(${acc.account_id}, '${safeServiceName}', '${safeUrl}', '${safeUsername}', '${safeNotes}')" class="p-1.5 text-slate-400 hover:text-amber-400 transition" title="แก้ไข">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button onclick="handleDeleteAccount(${acc.account_id})" class="p-1.5 text-slate-400 hover:text-red-400 transition" title="ลบ">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-2 mb-4">
+              <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
+                <span class="text-xs text-slate-400 truncate max-w-[200px]" title="${safeUsername}">${safeUsername}</span>
+                <span class="text-xs text-slate-600">Username</span>
+              </div>
+
+              <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
+                <span class="text-sm font-mono text-slate-300 tracking-wider">••••••••••••</span>
+                <button onclick="fetchAndCopyPassword('${acc.encrypted_password}', '${acc.iv}', this)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition flex items-center space-x-1">
+                  <i class="fa-regular fa-copy"></i>
+                  <span>คัดลอก</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          ${safeNotes ? `<p class="text-xs text-slate-500 italic border-t border-slate-800/80 pt-2 truncate">${safeNotes}</p>` : ''}
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    async function fetchAndCopyPassword(encryptedPassword, ivHex, btnElement) {
+      try {
+        const res = await fetch('/api/accounts/decrypt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ encryptedPassword, ivHex, clientUserKey })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          copyToClipboard(data.decryptedPassword, btnElement);
+        } else {
+          alert(data.message);
+        }
+      } catch (err) {
+        alert('เกิดข้อผิดพลาดในการถอดรหัส: ' + err.message);
+      }
+    }
+
+    async function handleAddAccount(e) {
+      e.preventDefault();
+      const serviceName = document.getElementById('add-service').value;
+      const serviceUrl = document.getElementById('add-url').value;
+      const accountUsername = document.getElementById('add-username').value;
+      const plainPassword = document.getElementById('add-password').value;
+      const notes = document.getElementById('add-notes').value;
+
+      try {
+        const res = await fetch('/api/accounts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            serviceName,
+            serviceUrl,
+            accountUsername,
+            plainPassword,
+            clientUserKey,
+            notes
+          })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          closeModal();
+          loadAccounts();
+          document.getElementById('add-service').value = '';
+          document.getElementById('add-password').value = '';
+        } else {
+          alert(data.message);
+        }
+      } catch (err) {
+        alert('เกิดข้อผิดพลาดในการบันทึก: ' + err.message);
+      }
+    }
+
+    function openEditModal(id, service, url, username, notes) {
+      document.getElementById('edit-id').value = id;
+      document.getElementById('edit-service').value = service;
+      document.getElementById('edit-url').value = url;
+      document.getElementById('edit-username').value = username;
+      document.getElementById('edit-notes').value = notes;
+      document.getElementById('edit-password').value = '';
+      document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').classList.add('hidden');
+    }
+
+    async function handleEditAccount(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-id').value;
+      const serviceName = document.getElementById('edit-service').value;
+      const serviceUrl = document.getElementById('edit-url').value;
+      const accountUsername = document.getElementById('edit-username').value;
+      const plainPassword = document.getElementById('edit-password').value;
+      const notes = document.getElementById('edit-notes').value;
+
+      try {
+        const res = await fetch(`/api/accounts/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            serviceName,
+            serviceUrl,
+            accountUsername,
+            plainPassword,
+            clientUserKey,
+            notes
+          })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          closeEditModal();
+          loadAccounts();
+        } else {
+          alert(data.message);
+        }
+      } catch (err) {
+        alert('เกิดข้อผิดพลาดในการแก้ไข: ' + err.message);
+      }
+    }
+
+    async function handleDeleteAccount(id) {
+      if (!confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) return;
+
+      try {
+        const res = await fetch(`/api/accounts/${id}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          loadAccounts();
+        } else {
+          alert(data.message);
+        }
+      } catch (err) {
+        alert('เกิดข้อผิดพลาดในการลบ: ' + err.message);
+      }
+    }
+
+    function filterAccounts(keyword) {
+      const cards = document.querySelectorAll('.account-card');
+      const query = keyword.toLowerCase();
+
+      cards.forEach(card => {
+        const service = card.getAttribute('data-service') || '';
+        if (service.includes(query)) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    function openModal() { document.getElementById('add-modal').classList.remove('hidden'); }
+    function closeModal() { document.getElementById('add-modal').classList.add('hidden'); }
+    function logout() {
+      sessionStorage.clear();
+      window.location.href = '/login.html';
+    }
+  </script>
+</body>
+</html>
